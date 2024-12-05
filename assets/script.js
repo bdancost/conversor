@@ -1,7 +1,36 @@
-let dolar = 6.4;
+const API_URL = "https://economia.awesomeapi.com.br/json/last/";
 
 let usdInput = document.querySelector("#usd");
 let brlInput = document.querySelector("#brl");
+let eurInput = document.querySelector("#eur");
+let arsInput = document.querySelector("#ars");
+
+// Cotaçoės obtidas da API
+let exchangeRates = {};
+
+// Função para buscar cotações na API
+async function fetchExchangeRates() {
+  try {
+    const response = await fetch(
+      `${API_URL}USD-BRL,EUR-BRL,ARS-BRL,USD-ARS,EUR-ARS,USD-EUR`
+    );
+    const data = await response.json();
+
+    exchangeRates = {
+      usdToBrl: parseFloat(data.USDBRL.bid),
+      eurToBrl: parseFloat(data.EURBRL.bid),
+      arsToBrl: parseFloat(data.ARSBRL.bid),
+    };
+  } catch (error) {
+    console.error("Erro ao buscar cotação do dólar:", error);
+    alert(
+      "Erro ao buscar cotação do dolar. Por favor, tente novamente mais tarde."
+    );
+  }
+}
+
+// Inicializar as cotações ao carregar a página
+fetchExchangeRates();
 
 usdInput.addEventListener("keyup", () => {
   convert("usd-to-brl");
@@ -9,6 +38,22 @@ usdInput.addEventListener("keyup", () => {
 
 brlInput.addEventListener("keyup", () => {
   convert("brl-to-usd");
+});
+
+arsInput.addEventListener("keyup", () => {
+  convert("ars-to-brl");
+});
+
+usdInput.addEventListener("keyup", () => {
+  convert("brl-to-ars");
+});
+
+eurInput.addEventListener("keyup", () => {
+  convert("eur-to-brl");
+});
+
+brlInput.addEventListener("keyup", () => {
+  convert("usd-to-eur");
 });
 
 usdInput.addEventListener("blur", () => {
@@ -19,8 +64,13 @@ brlInput.addEventListener("blur", () => {
   brlInput.value = formatCurrency(brlInput.value);
 });
 
-usdInput.value = "1000,00";
-convert("usd-to-brl");
+arsInput.addEventListener("blur", () => {
+  arsInput.value = formatCurrency(arsInput.value);
+});
+
+eurInput.addEventListener("blur", () => {
+  eurInput.value = formatCurrency(eurInput.value);
+});
 
 function formatCurrency(value) {
   // ajustar o valor
@@ -44,24 +94,29 @@ function fixValue(value) {
   return floatValue;
 }
 
+// Função para conversões
 function convert(type) {
   if (type === "usd-to-brl") {
-    // ajustar o valor
     let fixedValue = fixValue(usdInput.value);
-    // converter o valor
-    let result = fixedValue * dolar;
-    result = result.toFixed(2);
-    // mostra no campo o valor
-    brlInput.value = formatCurrency(result);
+    let result = fixedValue * exchangeRates.usdToBrl;
+    brlInput.value = formatCurrency(result.toFixed(2));
   }
 
   if (type === "brl-to-usd") {
-    // ajustar o valor
     let fixedValue = fixValue(brlInput.value);
-    // converter o valor
-    let result = fixedValue / dolar;
-    result = result.toFixed(2);
-    // mostra no campo o valor
-    usdInput.value = formatCurrency(result);
+    let result = fixedValue / exchangeRates.usdToBrl;
+    usdInput.value = formatCurrency(result.toFixed(2));
+  }
+
+  if (type === "ars-to-brl") {
+    let fixedValue = fixValue(arsInput.value);
+    let result = fixedValue * exchangeRates.arsToBrl;
+    brlInput.value = formatCurrency(result.toFixed(2));
+  }
+
+  if (type === "eur-to-brl") {
+    let fixedValue = fixValue(eurInput.value);
+    let result = fixedValue * exchangeRates.eurToBrl;
+    brlInput.value = formatCurrency(result.toFixed(2));
   }
 }
