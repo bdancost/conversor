@@ -44,7 +44,7 @@ arsInput.addEventListener("keyup", () => {
   convert("ars-to-brl");
 });
 
-usdInput.addEventListener("keyup", () => {
+brlInput.addEventListener("keyup", () => {
   convert("brl-to-ars");
 });
 
@@ -53,7 +53,7 @@ eurInput.addEventListener("keyup", () => {
 });
 
 brlInput.addEventListener("keyup", () => {
-  convert("usd-to-eur");
+  convert("brl-to-eur");
 });
 
 usdInput.addEventListener("blur", () => {
@@ -114,9 +114,21 @@ function convert(type) {
     brlInput.value = formatCurrency(result.toFixed(2));
   }
 
+  if (type === "brl-to-ars") {
+    let fixedValue = fixValue(brlInput.value);
+    let result = fixedValue / exchangeRates.arsToBrl;
+    arsInput.value = formatCurrency(result.toFixed(2));
+  }
+
   if (type === "eur-to-brl") {
     let fixedValue = fixValue(eurInput.value);
     let result = fixedValue * exchangeRates.eurToBrl;
     brlInput.value = formatCurrency(result.toFixed(2));
+  }
+
+  if (type === "brl-to-eur") {
+    let fixedValue = fixValue(brlInput.value);
+    let result = fixedValue / exchangeRates.eurToBrl;
+    eurInput.value = formatCurrency(result.toFixed(2));
   }
 }
