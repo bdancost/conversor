@@ -1,9 +1,12 @@
 const API_URL = "https://economia.awesomeapi.com.br/json/last/";
 
-let usdInput = document.querySelector("#usd");
-let brlInput = document.querySelector("#brl");
-let eurInput = document.querySelector("#eur");
-let arsInput = document.querySelector("#ars");
+// Inputs de moeda
+const inputs = {
+  usd: document.querySelector("#usd"),
+  brl: document.querySelector("#brl"),
+  eur: document.querySelector("#eur"),
+  ars: document.querySelector("#ars"),
+};
 
 // Cotaçoės obtidas da API
 let exchangeRates = {};
@@ -11,9 +14,7 @@ let exchangeRates = {};
 // Função para buscar cotações na API
 async function fetchExchangeRates() {
   try {
-    const response = await fetch(
-      `${API_URL}USD-BRL,EUR-BRL,ARS-BRL,USD-ARS,EUR-ARS,USD-EUR`
-    );
+    const response = await fetch(`${API_URL}USD-BRL,EUR-BRL,ARS-BRL`);
     const data = await response.json();
 
     exchangeRates = {
@@ -32,103 +33,45 @@ async function fetchExchangeRates() {
 // Inicializar as cotações ao carregar a página
 fetchExchangeRates();
 
-usdInput.addEventListener("keyup", () => {
-  convert("usd-to-brl");
-});
-
-brlInput.addEventListener("keyup", () => {
-  convert("brl-to-usd");
-});
-
-arsInput.addEventListener("keyup", () => {
-  convert("ars-to-brl");
-});
-
-brlInput.addEventListener("keyup", () => {
-  convert("brl-to-ars");
-});
-
-eurInput.addEventListener("keyup", () => {
-  convert("eur-to-brl");
-});
-
-brlInput.addEventListener("keyup", () => {
-  convert("brl-to-eur");
-});
-
-usdInput.addEventListener("blur", () => {
-  usdInput.value = formatCurrency(usdInput.value);
-});
-
-brlInput.addEventListener("blur", () => {
-  brlInput.value = formatCurrency(brlInput.value);
-});
-
-arsInput.addEventListener("blur", () => {
-  arsInput.value = formatCurrency(arsInput.value);
-});
-
-eurInput.addEventListener("blur", () => {
-  eurInput.value = formatCurrency(eurInput.value);
-});
-
+// Formatação de valores
 function formatCurrency(value) {
-  // ajustar o valor
-  let fixedValue = fixValue(value);
-  // utilizar função para formatação
-  let options = {
-    useGrouping: false,
-    minimumFractionDigits: 2,
-  };
-  let formatter = new Intl.NumberFormat("pt-BR", options);
-  // retorna o valor formatado
-  return formatter.format(fixedValue);
+  const options = { minimumFractionDigits: 2, useGrouping: false };
+  return new Intl.NumberFormat("pt-BR", options).format(value);
 }
 
 function fixValue(value) {
-  let fixedValue = value.replace(",", ".");
-  let floatValue = parseFloat(fixedValue);
-  if (floatValue == NaN) {
-    floatValue = 0;
-  }
-  return floatValue;
+  const fixedValue = parseFloat(value.replace(",", "."));
+  return isNaN(fixedValue) ? 0 : fixedValue;
 }
 
-// Função para conversões
-function convert(type) {
-  if (type === "usd-to-brl") {
-    let fixedValue = fixValue(usdInput.value);
-    let result = fixedValue * exchangeRates.usdToBrl;
-    brlInput.value = formatCurrency(result.toFixed(2));
+// Funções genéricas para conversão
+function convertCurrency(from, to) {
+  if (!exchangeRates) return;
+
+  const value = fixValue(inputs[from].value);
+  let result;
+
+  if (from === "brl") {
+    result = value / exchangeRates[`${to}ToBrl`];
+  } else if (to === "brl") {
+    result = value * exchangeRates[`${from}ToBrl`];
+  } else {
+    result =
+      (value * exchangeRates[`${from}ToBrl`]) / exchangeRates[`${to}ToBrl`];
   }
 
-  if (type === "brl-to-usd") {
-    let fixedValue = fixValue(brlInput.value);
-    let result = fixedValue / exchangeRates.usdToBrl;
-    usdInput.value = formatCurrency(result.toFixed(2));
-  }
-
-  if (type === "ars-to-brl") {
-    let fixedValue = fixValue(arsInput.value);
-    let result = fixedValue * exchangeRates.arsToBrl;
-    brlInput.value = formatCurrency(result.toFixed(2));
-  }
-
-  if (type === "brl-to-ars") {
-    let fixedValue = fixValue(brlInput.value);
-    let result = fixedValue / exchangeRates.arsToBrl;
-    arsInput.value = formatCurrency(result.toFixed(2));
-  }
-
-  if (type === "eur-to-brl") {
-    let fixedValue = fixValue(eurInput.value);
-    let result = fixedValue * exchangeRates.eurToBrl;
-    brlInput.value = formatCurrency(result.toFixed(2));
-  }
-
-  if (type === "brl-to-eur") {
-    let fixedValue = fixValue(brlInput.value);
-    let result = fixedValue / exchangeRates.eurToBrl;
-    eurInput.value = formatCurrency(result.toFixed(2));
-  }
+  inputs[to].value = formatCurrency(result.toFixed(2));
 }
+
+// Configuração de eventos genérica
+Object.keys(inputs).forEach((from) => {
+  inputs[from].addEventListener("keyup", () => {
+    Object.keys(inputs).forEach((to) => {
+      if (from !== to) convertCurrency(from, to);
+    });
+  });
+
+  inputs[from].addEventListener("blur", () => {
+    inputs[from].value = formatCurrency(fixValue(inputs[from].value));
+  });
+});
